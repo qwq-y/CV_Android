@@ -16,8 +16,11 @@
 
 package com.google.ar.core.examples.java.computervision;
 
+import android.Manifest;
+import android.content.pm.PackageManager;
 import android.graphics.ImageFormat;
 import android.media.Image;
+import android.net.Uri;
 import android.opengl.GLES20;
 import android.opengl.GLSurfaceView;
 import android.os.Bundle;
@@ -25,13 +28,26 @@ import android.util.Log;
 import android.util.Size;
 import android.view.Gravity;
 import android.view.View;
+import android.widget.Button;
 import android.widget.CompoundButton;
 import android.widget.RadioButton;
 import android.widget.RadioGroup;
 import android.widget.Switch;
 import android.widget.TextView;
 import android.widget.Toast;
+
+import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.camera.core.CameraSelector;
+import androidx.camera.core.ImageCapture;
+import androidx.camera.core.ImageCaptureException;
+import androidx.camera.core.Preview;
+import androidx.camera.lifecycle.ProcessCameraProvider;
+import androidx.camera.view.PreviewView;
+import androidx.core.app.ActivityCompat;
+import androidx.core.content.ContextCompat;
+import androidx.lifecycle.LifecycleOwner;
+
 import com.google.ar.core.ArCoreApk;
 import com.google.ar.core.Camera;
 import com.google.ar.core.CameraConfig;
@@ -50,12 +66,21 @@ import com.google.ar.core.exceptions.UnavailableApkTooOldException;
 import com.google.ar.core.exceptions.UnavailableArcoreNotInstalledException;
 import com.google.ar.core.exceptions.UnavailableSdkTooOldException;
 import com.google.ar.core.exceptions.UnavailableUserDeclinedInstallationException;
+import com.google.common.util.concurrent.ListenableFuture;
+
+import java.io.File;
 import java.io.IOException;
 import java.nio.ByteBuffer;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.EnumSet;
 import java.util.List;
+import java.util.Locale;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+
 import javax.microedition.khronos.egl.EGLConfig;
 import javax.microedition.khronos.opengles.GL10;
 
@@ -136,6 +161,21 @@ public class ComputerVisionActivity extends AppCompatActivity implements GLSurfa
   private final FrameTimeHelper renderFrameTimeHelper = new FrameTimeHelper();
   private final FrameTimeHelper cpuImageFrameTimeHelper = new FrameTimeHelper();
 
+
+  // 相机
+  private PreviewView viewFinder;
+  private Button startCaptureButton;
+
+  private ImageCapture imageCapture;
+  private File outputDirectory;
+  private ExecutorService cameraExecutor;
+
+  private static final String FILENAME_FORMAT = "yyyy-MM-dd-HH-mm-ss-SSS";
+  private static final int REQUEST_CODE_PERMISSIONS = 10;
+  private static final String[] REQUIRED_PERMISSIONS = new String[]{Manifest.permission.CAMERA};
+
+  private ArrayList<Uri> photoUris = new ArrayList<>();
+
   @Override
   protected void onCreate(Bundle savedInstanceState) {
     super.onCreate(savedInstanceState);
@@ -147,6 +187,8 @@ public class ComputerVisionActivity extends AppCompatActivity implements GLSurfa
     cvModeSwitch.setOnCheckedChangeListener(this::onCVModeChanged);
     focusModeSwitch = (Switch) findViewById(R.id.switch_focus_mode);
     focusModeSwitch.setOnCheckedChangeListener(this::onFocusModeChanged);
+    startCaptureButton = findViewById(R.id.startCaptureButton);
+    viewFinder = findViewById(R.id.viewFinder);
 
     cpuImageDisplayRotationHelper = new CpuImageDisplayRotationHelper(/*context=*/ this);
 
@@ -162,6 +204,25 @@ public class ComputerVisionActivity extends AppCompatActivity implements GLSurfa
     getLifecycle().addObserver(cpuImageFrameTimeHelper);
 
     installRequested = false;
+
+    startCaptureButton.setOnClickListener(new View.OnClickListener() {
+      @Override
+      public void onClick(View v) {
+        takePhoto();
+      }
+    });
+
+    // 请求相机权限
+    if (allPermissionsGranted()) {
+      startCamera();
+    } else {
+      ActivityCompat.requestPermissions(
+              this, REQUIRED_PERMISSIONS, REQUEST_CODE_PERMISSIONS);
+    }
+
+    outputDirectory = getOutputDirectory();
+    cameraExecutor = Executors.newSingleThreadExecutor();
+
   }
 
   @Override
@@ -258,14 +319,26 @@ public class ComputerVisionActivity extends AppCompatActivity implements GLSurfa
   @Override
   public void onRequestPermissionsResult(int requestCode, String[] permissions, int[] results) {
     super.onRequestPermissionsResult(requestCode, permissions, results);
-    if (!CameraPermissionHelper.hasCameraPermission(this)) {
-      Toast.makeText(this, "Camera permission is needed to run this application", Toast.LENGTH_LONG)
-          .show();
-      if (!CameraPermissionHelper.shouldShowRequestPermissionRationale(this)) {
-        // Permission denied with checking "Do not ask again".
-        CameraPermissionHelper.launchPermissionSettings(this);
+
+    if (requestCode == REQUEST_CODE_PERMISSIONS) {
+      if (allPermissionsGranted()) {
+        startCamera();
+      } else {
+        Toast.makeText(this,
+                "Permissions not granted by the user.",
+                Toast.LENGTH_SHORT).show();
+        finish();
       }
-      finish();
+    } else {
+      if (!CameraPermissionHelper.hasCameraPermission(this)) {
+        Toast.makeText(this, "Camera permission is needed to run this application", Toast.LENGTH_LONG)
+                .show();
+        if (!CameraPermissionHelper.shouldShowRequestPermissionRationale(this)) {
+          // Permission denied with checking "Do not ask again".
+          CameraPermissionHelper.launchPermissionSettings(this);
+        }
+        finish();
+      }
     }
   }
 
@@ -596,5 +669,91 @@ public class ComputerVisionActivity extends AppCompatActivity implements GLSurfa
         renderFrameTimeHelper.getSmoothedFrameRate(),
         cpuImageFrameTimeHelper.getSmoothedFrameTime(),
         cpuImageFrameTimeHelper.getSmoothedFrameRate());
+  }
+
+  // 拍摄，在点击按钮时调用
+  private void takePhoto() {
+    // 相机的拍摄 use case
+    if (imageCapture == null) {
+      return;
+    }
+
+    // 创建用于图片输出的文件
+    File photoFile = new File(
+            outputDirectory,
+            new SimpleDateFormat(FILENAME_FORMAT, Locale.US)
+                    .format(System.currentTimeMillis()) + ".jpg");
+
+    ImageCapture.OutputFileOptions outputOptions = new ImageCapture.OutputFileOptions.Builder(photoFile).build();
+
+    // 拍摄照片后回调
+    imageCapture.takePicture(
+            outputOptions, ContextCompat.getMainExecutor(this),
+            new ImageCapture.OnImageSavedCallback() {
+              @Override
+              public void onError(ImageCaptureException exc) {
+                String msg = "Photo capture failed: " + exc.getMessage();
+                Log.e(TAG, msg, exc);
+              }
+
+              @Override
+              public void onImageSaved(ImageCapture.OutputFileResults output) {
+                Uri savedUri = Uri.fromFile(photoFile);
+
+                photoUris.add(savedUri);
+//                rotationMatrices.add(rotationMatrix);
+//                translationMatrices.add(translationMatrix);
+
+                String msg = "Photo capture succeeded: " + savedUri;
+                Toast.makeText(getApplicationContext(), msg, Toast.LENGTH_SHORT).show();   // 弹出消息框
+                Log.d(TAG, msg);
+              }
+            });
+  }
+
+  // 预览，在页面创建时开启
+  private void startCamera() {
+    ListenableFuture<ProcessCameraProvider> cameraProviderFuture = ProcessCameraProvider.getInstance(this);
+
+    cameraProviderFuture.addListener(() -> {
+      // 绑定生命周期
+      ProcessCameraProvider cameraProvider;
+      try {
+        cameraProvider = cameraProviderFuture.get();
+      } catch (ExecutionException | InterruptedException e) {
+        e.printStackTrace();
+        return;
+      }
+
+      Preview preview = new Preview.Builder().build();
+      preview.setSurfaceProvider(viewFinder.getSurfaceProvider());
+
+      imageCapture = new ImageCapture.Builder().build();
+
+      CameraSelector cameraSelector = CameraSelector.DEFAULT_BACK_CAMERA;
+
+      try {
+        cameraProvider.unbindAll();
+        cameraProvider.bindToLifecycle((LifecycleOwner) this, cameraSelector, preview, imageCapture);
+
+      } catch (Exception exc) {
+        Log.e(TAG, "Use case binding failed", exc);
+      }
+
+    }, ContextCompat.getMainExecutor(this));
+  }
+
+  private boolean allPermissionsGranted() {
+    return ContextCompat.checkSelfPermission(
+            getBaseContext(), REQUIRED_PERMISSIONS[0]) == PackageManager.PERMISSION_GRANTED;
+  }
+
+  private File getOutputDirectory() {
+    File mediaDir = getExternalMediaDirs()[0];
+    File appDir = new File(mediaDir, getResources().getString(R.string.app_name));
+    if (!appDir.exists()) {
+      appDir.mkdirs();
+    }
+    return appDir;
   }
 }
