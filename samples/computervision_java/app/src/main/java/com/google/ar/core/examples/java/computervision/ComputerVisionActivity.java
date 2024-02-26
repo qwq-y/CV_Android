@@ -102,7 +102,8 @@ import javax.microedition.khronos.opengles.GL10;
  * This is a simple example that demonstrates CPU image access with ARCore.
  */
 public class ComputerVisionActivity extends AppCompatActivity implements GLSurfaceView.Renderer, SensorEventListener {
-    private static final String TAG = ComputerVisionActivity.class.getSimpleName();
+//    private static final String TAG = ComputerVisionActivity.class.getSimpleName();
+    private static final String TAG = "ww";
     private static final String CAMERA_INTRINSICS_TEXT_FORMAT =
             "\tUnrotated Camera %s %s Intrinsics:\n\tFocal Length: (%.2f, %.2f)"
                     + "\n\tPrincipal Point: (%.2f, %.2f)"
@@ -747,43 +748,59 @@ public class ComputerVisionActivity extends AppCompatActivity implements GLSurfa
 
     // 拍摄，在点击按钮时调用
     private void takePhoto() {
-        // 相机的拍摄 use case
-        if (imageCapture == null) {
-            return;
-        }
+        // 创建一个新的线程
+        Thread photoThread = new Thread(new Runnable() {
+            @Override
+            public void run() {
+                // 相机的拍摄 use case
+                if (imageCapture == null) {
+                    return;
+                }
 
-        // 创建用于图片输出的文件
-        File photoFile = new File(
-                outputDirectory,
-                new SimpleDateFormat(FILENAME_FORMAT, Locale.US)
-                        .format(System.currentTimeMillis()) + ".jpg");
+                // 创建用于图片输出的文件
+                File photoFile = new File(
+                        outputDirectory,
+                        new SimpleDateFormat(FILENAME_FORMAT, Locale.US)
+                                .format(System.currentTimeMillis()) + ".jpg");
 
-        ImageCapture.OutputFileOptions outputOptions = new ImageCapture.OutputFileOptions.Builder(photoFile).build();
+                ImageCapture.OutputFileOptions outputOptions = new ImageCapture.OutputFileOptions.Builder(photoFile).build();
 
-        // 拍摄照片后回调
-        imageCapture.takePicture(
-                outputOptions, ContextCompat.getMainExecutor(this),
-                new ImageCapture.OnImageSavedCallback() {
-                    @Override
-                    public void onError(ImageCaptureException exc) {
-                        String msg = "Photo capture failed: " + exc.getMessage();
-                        Log.e(TAG, msg, exc);
-                    }
+                // 拍摄照片后回调
+                imageCapture.takePicture(
+                        outputOptions, ContextCompat.getMainExecutor(ComputerVisionActivity.this),
+                        new ImageCapture.OnImageSavedCallback() {
+                            @Override
+                            public void onError(ImageCaptureException e) {
+                                String msg = "Photo capture failed: " + e.getMessage();
+                                Log.e(TAG, msg, e);
+                            }
 
-                    @Override
-                    public void onImageSaved(ImageCapture.OutputFileResults output) {
-                        Uri savedUri = Uri.fromFile(photoFile);
+                            @Override
+                            public void onImageSaved(ImageCapture.OutputFileResults output) {
+                                Uri savedUri = Uri.fromFile(photoFile);
 
-                        photoUris.add(savedUri);
-                        rotationMatrices.add(rotationMatrix);
-                        translationMatrices.add(translationMatrix);
+                                photoUris.add(savedUri);
+                                rotationMatrices.add(rotationMatrix);
+                                translationMatrices.add(translationMatrix);
 
-                        String msg = "Photo capture succeeded: " + savedUri;
-                        Toast.makeText(getApplicationContext(), msg, Toast.LENGTH_SHORT).show();   // 弹出消息框
-                        Log.d(TAG, msg);
-                    }
-                });
+                                String msg = "Photo capture succeeded: " + savedUri;
+                                runOnUiThread(new Runnable() {
+                                    @Override
+                                    public void run() {
+                                        Toast.makeText(getApplicationContext(), msg, Toast.LENGTH_SHORT).show();
+                                    }
+                                });
+
+                                Log.d(TAG, msg);
+                            }
+                        });
+            }
+        });
+
+        // 启动线程
+        photoThread.start();
     }
+
 
     // 预览，在页面创建时开启
     private void startCamera() {
@@ -893,7 +910,7 @@ public class ComputerVisionActivity extends AppCompatActivity implements GLSurfa
 //            }
 //        });
 
-        Log.d("ww", matrixBuilder.toString());
+        Log.d(TAG, matrixBuilder.toString());
     }
 
     @Override
