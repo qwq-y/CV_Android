@@ -60,8 +60,11 @@ import com.google.ar.core.CameraConfig;
 import com.google.ar.core.CameraConfigFilter;
 import com.google.ar.core.CameraIntrinsics;
 import com.google.ar.core.Config;
+import com.google.ar.core.Earth;
 import com.google.ar.core.Frame;
+import com.google.ar.core.Pose;
 import com.google.ar.core.Session;
+import com.google.ar.core.TrackingState;
 import com.google.ar.core.examples.java.common.helpers.CameraPermissionHelper;
 import com.google.ar.core.examples.java.common.helpers.FullScreenHelper;
 import com.google.ar.core.examples.java.common.helpers.SnackbarHelper;
@@ -87,6 +90,7 @@ import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.EnumSet;
 import java.util.List;
@@ -182,6 +186,7 @@ public class ComputerVisionActivity extends AppCompatActivity implements GLSurfa
     // 相机
     private PreviewView viewFinder;
     private Button startCaptureButton;
+    private Button printButton;
 
     private ImageCapture imageCapture;
     private File outputDirectory;
@@ -220,6 +225,11 @@ public class ComputerVisionActivity extends AppCompatActivity implements GLSurfa
     private ArrayList<float[]> rotationMatrices = new ArrayList<>();
     private ArrayList<float[]> translationMatrices = new ArrayList<>();
 
+    private Pose pose;
+    private ArrayList<Pose> poses = new ArrayList<>();
+
+    private CameraIntrinsics intrinsics;
+
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -233,6 +243,7 @@ public class ComputerVisionActivity extends AppCompatActivity implements GLSurfa
         focusModeSwitch = (Switch) findViewById(R.id.switch_focus_mode);
         focusModeSwitch.setOnCheckedChangeListener(this::onFocusModeChanged);
         startCaptureButton = findViewById(R.id.startCaptureButton);
+        printButton = findViewById(R.id.printButton);
         viewFinder = findViewById(R.id.viewFinder);
 
         cpuImageDisplayRotationHelper = new CpuImageDisplayRotationHelper(/*context=*/ this);
@@ -276,9 +287,17 @@ public class ComputerVisionActivity extends AppCompatActivity implements GLSurfa
         startCaptureButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                printMatrix(rotationMatrix, 3, 3);
-                printMatrix(translationMatrix, 4, 4);
+//                printMatrix(rotationMatrix, 3, 3);
+//                printMatrix(translationMatrix, 4, 4);
+//                Log.d(TAG, pose.toString());
                 takePhoto();
+            }
+        });
+
+        printButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                printInfo();
             }
         });
 
@@ -713,10 +732,14 @@ public class ComputerVisionActivity extends AppCompatActivity implements GLSurfa
         Camera camera = frame.getCamera();
 
         boolean forGpuTexture = (cpuImageRenderer.getSplitterPosition() > 0.5f);
-        CameraIntrinsics intrinsics =
+        intrinsics =
                 forGpuTexture ? camera.getTextureIntrinsics() : camera.getImageIntrinsics();
         String intrinsicsLabel = forGpuTexture ? "Texture" : "Image";
         String imageType = forGpuTexture ? "GPU" : "CPU";
+;
+//        if (earth.getTrackingState() == TrackingState.TRACKING) {
+            pose = camera.getPose();
+//        }
 
         float[] focalLength = intrinsics.getFocalLength();
         float[] principalPoint = intrinsics.getPrincipalPoint();
@@ -782,6 +805,7 @@ public class ComputerVisionActivity extends AppCompatActivity implements GLSurfa
                                 photoUris.add(savedUri);
                                 rotationMatrices.add(rotationMatrix);
                                 translationMatrices.add(translationMatrix);
+                                poses.add(pose);
 
                                 String msg = "Photo capture succeeded: " + savedUri;
                                 runOnUiThread(new Runnable() {
@@ -911,6 +935,24 @@ public class ComputerVisionActivity extends AppCompatActivity implements GLSurfa
 //        });
 
         Log.d(TAG, matrixBuilder.toString());
+    }
+
+    public void printInfo() {
+        StringBuilder sb = new StringBuilder();
+
+        float[] focalLength = intrinsics.getFocalLength();
+        float[] principalPoint = intrinsics.getPrincipalPoint();
+        int[] imageSize = intrinsics.getImageDimensions();
+
+        sb.append("focalLength: ").append(Arrays.toString(focalLength)).append("\n");
+        sb.append("principalPoint: ").append(Arrays.toString(principalPoint)).append("\n");
+        sb.append("imageSize: ").append(Arrays.toString(imageSize)).append("\n");
+
+        for (Pose pose : poses) {
+            sb.append("\n").append(pose);
+        }
+
+        Log.d(TAG, sb.toString());
     }
 
     @Override

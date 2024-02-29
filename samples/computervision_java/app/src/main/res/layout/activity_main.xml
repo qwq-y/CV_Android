@@ -20,19 +20,19 @@
 <!--    tools:context="com.google.ar.core.examples.java.computervision.ComputerVisionActivity">-->
 
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_margin="10dp"
-    android:orientation="vertical"
-    android:gravity="center">
+    android:gravity="center"
+    android:orientation="vertical">
 
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="0dp"
         android:layout_weight="3"
-        android:orientation="vertical"
-        android:gravity="center">
+        android:gravity="center"
+        android:orientation="vertical">
 
         <FrameLayout
             android:layout_width="match_parent"
@@ -63,15 +63,15 @@
         android:layout_width="match_parent"
         android:layout_height="0dp"
         android:layout_weight="0.7"
-        android:orientation="horizontal"
-        android:gravity="center">
+        android:gravity="center"
+        android:orientation="horizontal">
 
         <LinearLayout
             android:layout_width="0dp"
             android:layout_height="match_parent"
             android:layout_weight="0.6"
-            android:orientation="horizontal"
-            android:gravity="center">
+            android:gravity="center"
+            android:orientation="horizontal">
 
             <RadioGroup
                 android:id="@+id/radio_camera_configs"
@@ -79,24 +79,27 @@
                 android:layout_height="wrap_content"
                 android:checkedButton="@+id/radio_low_res"
                 android:orientation="vertical">
+
                 <RadioButton
                     android:id="@+id/radio_low_res"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:onClick="onLowResolutionRadioButtonClicked"
-                    android:text="@string/label_low_res"/>
+                    android:text="@string/label_low_res" />
+
                 <RadioButton
                     android:id="@+id/radio_medium_res"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:onClick="onMediumResolutionRadioButtonClicked"
-                    android:text="@string/label_medium_res"/>
+                    android:text="@string/label_medium_res" />
+
                 <RadioButton
                     android:id="@+id/radio_high_res"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:onClick="onHighResolutionRadioButtonClicked"
-                    android:text="@string/label_high_res"/>
+                    android:text="@string/label_high_res" />
 
             </RadioGroup>
         </LinearLayout>
@@ -105,8 +108,8 @@
             android:layout_width="0dp"
             android:layout_height="match_parent"
             android:layout_weight="0.4"
-            android:orientation="vertical"
-            android:gravity="center">
+            android:gravity="center"
+            android:orientation="vertical">
 
             <Switch
                 android:id="@+id/switch_cv_mode"
@@ -122,8 +125,8 @@
                 android:id="@+id/switch_focus_mode"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:layout_alignParentEnd="true"
                 android:layout_below="@+id/switch_cv_mode"
+                android:layout_alignParentEnd="true"
                 android:checked="false"
                 android:text="@string/switch_focus_mode"
                 android:textColor="#ffffff" />
@@ -136,8 +139,8 @@
         android:layout_width="match_parent"
         android:layout_height="0dp"
         android:layout_weight="0.3"
-        android:orientation="horizontal"
-        android:gravity="center">
+        android:gravity="center"
+        android:orientation="horizontal">
 
         <Button
             android:id="@+id/startCaptureButton"
@@ -148,14 +151,23 @@
             android:textColor="#FFFFFF"
             android:textSize="15dp" />
 
+        <Button
+            android:id="@+id/printButton"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginHorizontal="15dp"
+            android:text="print"
+            android:textColor="#FFFFFF"
+            android:textSize="15dp" />
+
     </LinearLayout>
 
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="0dp"
         android:layout_weight="1"
-        android:orientation="vertical"
-        android:gravity="center">
+        android:gravity="center"
+        android:orientation="vertical">
 
         <TextView
             android:id="@+id/camera_intrinsics_view"
@@ -163,95 +175,95 @@
             android:layout_height="wrap_content"
             android:layout_alignParentStart="true"
             android:layout_alignParentBottom="true"
-            android:textColor="#ffffff"/>
+            android:textColor="#ffffff" />
 
     </LinearLayout>
 
-<!--    <FrameLayout-->
-<!--        android:layout_width="match_parent"-->
-<!--        android:layout_height="match_parent">-->
+    <!--    <FrameLayout-->
+    <!--        android:layout_width="match_parent"-->
+    <!--        android:layout_height="match_parent">-->
 
-<!--        <androidx.camera.view.PreviewView-->
-<!--            android:id="@+id/viewFinder"-->
-<!--            android:layout_width="match_parent"-->
-<!--            android:layout_height="match_parent" />-->
+    <!--        <androidx.camera.view.PreviewView-->
+    <!--            android:id="@+id/viewFinder"-->
+    <!--            android:layout_width="match_parent"-->
+    <!--            android:layout_height="match_parent" />-->
 
-<!--        <android.opengl.GLSurfaceView-->
-<!--            android:id="@+id/surfaceview"-->
-<!--            android:layout_width="fill_parent"-->
-<!--            android:layout_height="fill_parent"-->
-<!--            android:layout_gravity="top" />-->
+    <!--        <android.opengl.GLSurfaceView-->
+    <!--            android:id="@+id/surfaceview"-->
+    <!--            android:layout_width="fill_parent"-->
+    <!--            android:layout_height="fill_parent"-->
+    <!--            android:layout_gravity="top" />-->
 
-<!--    </FrameLayout>-->
+    <!--    </FrameLayout>-->
 
-<!--&lt;!&ndash;  <android.opengl.GLSurfaceView&ndash;&gt;-->
-<!--&lt;!&ndash;      android:id="@+id/surfaceview"&ndash;&gt;-->
-<!--&lt;!&ndash;      android:layout_width="fill_parent"&ndash;&gt;-->
-<!--&lt;!&ndash;      android:layout_height="fill_parent"&ndash;&gt;-->
-<!--&lt;!&ndash;      android:layout_gravity="top"/>&ndash;&gt;-->
+    <!--&lt;!&ndash;  <android.opengl.GLSurfaceView&ndash;&gt;-->
+    <!--&lt;!&ndash;      android:id="@+id/surfaceview"&ndash;&gt;-->
+    <!--&lt;!&ndash;      android:layout_width="fill_parent"&ndash;&gt;-->
+    <!--&lt;!&ndash;      android:layout_height="fill_parent"&ndash;&gt;-->
+    <!--&lt;!&ndash;      android:layout_gravity="top"/>&ndash;&gt;-->
 
-<!--  <RadioGroup-->
-<!--      android:id="@+id/radio_camera_configs"-->
-<!--      android:layout_width="wrap_content"-->
-<!--      android:layout_height="wrap_content"-->
-<!--      android:checkedButton="@+id/radio_low_res"-->
-<!--      android:orientation="vertical">-->
-<!--      <RadioButton-->
-<!--          android:id="@+id/radio_low_res"-->
-<!--          android:layout_width="wrap_content"-->
-<!--          android:layout_height="wrap_content"-->
-<!--          android:onClick="onLowResolutionRadioButtonClicked"-->
-<!--          android:text="@string/label_low_res"/>-->
-<!--      <RadioButton-->
-<!--          android:id="@+id/radio_medium_res"-->
-<!--          android:layout_width="wrap_content"-->
-<!--          android:layout_height="wrap_content"-->
-<!--          android:onClick="onMediumResolutionRadioButtonClicked"-->
-<!--          android:text="@string/label_medium_res"/>-->
-<!--      <RadioButton-->
-<!--          android:id="@+id/radio_high_res"-->
-<!--          android:layout_width="wrap_content"-->
-<!--          android:layout_height="wrap_content"-->
-<!--          android:onClick="onHighResolutionRadioButtonClicked"-->
-<!--          android:text="@string/label_high_res"/>-->
+    <!--  <RadioGroup-->
+    <!--      android:id="@+id/radio_camera_configs"-->
+    <!--      android:layout_width="wrap_content"-->
+    <!--      android:layout_height="wrap_content"-->
+    <!--      android:checkedButton="@+id/radio_low_res"-->
+    <!--      android:orientation="vertical">-->
+    <!--      <RadioButton-->
+    <!--          android:id="@+id/radio_low_res"-->
+    <!--          android:layout_width="wrap_content"-->
+    <!--          android:layout_height="wrap_content"-->
+    <!--          android:onClick="onLowResolutionRadioButtonClicked"-->
+    <!--          android:text="@string/label_low_res"/>-->
+    <!--      <RadioButton-->
+    <!--          android:id="@+id/radio_medium_res"-->
+    <!--          android:layout_width="wrap_content"-->
+    <!--          android:layout_height="wrap_content"-->
+    <!--          android:onClick="onMediumResolutionRadioButtonClicked"-->
+    <!--          android:text="@string/label_medium_res"/>-->
+    <!--      <RadioButton-->
+    <!--          android:id="@+id/radio_high_res"-->
+    <!--          android:layout_width="wrap_content"-->
+    <!--          android:layout_height="wrap_content"-->
+    <!--          android:onClick="onHighResolutionRadioButtonClicked"-->
+    <!--          android:text="@string/label_high_res"/>-->
 
-<!--  </RadioGroup>-->
+    <!--  </RadioGroup>-->
 
-<!--    <Button-->
-<!--        android:id="@+id/startCaptureButton"-->
-<!--        android:layout_width="wrap_content"-->
-<!--        android:layout_height="wrap_content"-->
-<!--        android:layout_marginHorizontal="15dp"-->
-<!--        android:text="capture"-->
-<!--        android:textColor="#FFFFFF"-->
-<!--        android:textSize="15dp" />-->
+    <!--    <Button-->
+    <!--        android:id="@+id/startCaptureButton"-->
+    <!--        android:layout_width="wrap_content"-->
+    <!--        android:layout_height="wrap_content"-->
+    <!--        android:layout_marginHorizontal="15dp"-->
+    <!--        android:text="capture"-->
+    <!--        android:textColor="#FFFFFF"-->
+    <!--        android:textSize="15dp" />-->
 
-<!--  <Switch-->
-<!--      android:id="@+id/switch_cv_mode"-->
-<!--      android:layout_width="wrap_content"-->
-<!--      android:layout_height="wrap_content"-->
-<!--      android:layout_alignParentTop="true"-->
-<!--      android:layout_alignParentEnd="true"-->
-<!--      android:checked="false"-->
-<!--      android:text="@string/switch_cv_mode"-->
-<!--      android:textColor="#ffffff" />-->
-<!--  <Switch-->
-<!--      android:id="@+id/switch_focus_mode"-->
-<!--      android:layout_width="wrap_content"-->
-<!--      android:layout_height="wrap_content"-->
-<!--      android:layout_alignParentEnd="true"-->
-<!--      android:layout_below="@+id/switch_cv_mode"-->
-<!--      android:checked="false"-->
-<!--      android:text="@string/switch_focus_mode"-->
-<!--      android:textColor="#ffffff" />-->
+    <!--  <Switch-->
+    <!--      android:id="@+id/switch_cv_mode"-->
+    <!--      android:layout_width="wrap_content"-->
+    <!--      android:layout_height="wrap_content"-->
+    <!--      android:layout_alignParentTop="true"-->
+    <!--      android:layout_alignParentEnd="true"-->
+    <!--      android:checked="false"-->
+    <!--      android:text="@string/switch_cv_mode"-->
+    <!--      android:textColor="#ffffff" />-->
+    <!--  <Switch-->
+    <!--      android:id="@+id/switch_focus_mode"-->
+    <!--      android:layout_width="wrap_content"-->
+    <!--      android:layout_height="wrap_content"-->
+    <!--      android:layout_alignParentEnd="true"-->
+    <!--      android:layout_below="@+id/switch_cv_mode"-->
+    <!--      android:checked="false"-->
+    <!--      android:text="@string/switch_focus_mode"-->
+    <!--      android:textColor="#ffffff" />-->
 
-<!--  <TextView-->
-<!--      android:id="@+id/camera_intrinsics_view"-->
-<!--      android:layout_width="wrap_content"-->
-<!--      android:layout_height="wrap_content"-->
-<!--      android:layout_alignParentStart="true"-->
-<!--      android:layout_alignParentBottom="true"-->
-<!--      android:padding="20dp"-->
-<!--      android:textColor="#ffffff"/>-->
+    <!--  <TextView-->
+    <!--      android:id="@+id/camera_intrinsics_view"-->
+    <!--      android:layout_width="wrap_content"-->
+    <!--      android:layout_height="wrap_content"-->
+    <!--      android:layout_alignParentStart="true"-->
+    <!--      android:layout_alignParentBottom="true"-->
+    <!--      android:padding="20dp"-->
+    <!--      android:textColor="#ffffff"/>-->
 
 </LinearLayout>
